@@ -1,7 +1,9 @@
-# Environment variables - NEVER commit this
+# ── Secrets ────────────────────────────────────────────────────────────────
 .env
+.env.local
+.env.*.local
 
-# Python
+# ── Python ─────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *.pyo
@@ -13,43 +15,57 @@ build/
 .eggs/
 *.egg
 
-# Virtual environments
+# ── Virtual environments ────────────────────────────────────────────────────
 venv/
 env/
 .venv/
 ENV/
 
-# Data directories - repos and embeddings are too large
-data/repos/
-data/embeddings/
-data/graphs/
+# ── Data directories (large, generated at runtime) ─────────────────────────
+data/
+/tmp/repos/
+/tmp/embeddings/
+/tmp/graphs/
 
-# Node
+# ── Node ────────────────────────────────────────────────────────────────────
 node_modules/
 frontend/node_modules/
 
-# Build output
+# ── Frontend build output ───────────────────────────────────────────────────
 frontend/dist/
 frontend/.vite/
+dist/
 
-# VS Code
+# ── IDE / Editor ────────────────────────────────────────────────────────────
 .vscode/
+.idea/
 *.code-workspace
+*.swp
+*.swo
 
-# OS files
+# ── OS files ────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# Logs
+# ── Logs ────────────────────────────────────────────────────────────────────
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Python test/cache
+# ── Python test / type checking ─────────────────────────────────────────────
 .pytest_cache/
 .mypy_cache/
 .coverage
 htmlcov/
+.tox/
 
-# Sentence transformers cache
+# ── Model / embedding cache ─────────────────────────────────────────────────
 .cache/
+sentence_transformers/
+*.pt
+*.bin
+
+# ── Render / deployment ─────────────────────────────────────────────────────
+.render/

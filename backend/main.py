@@ -56,6 +56,10 @@ def get_llm_client():
             raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY not set in .env")
         return anthropic.Anthropic(api_key=api_key)
 
+# ── Ensure data directories exist (important on Render /tmp) ────────────────
+for _dir in [REPOS_DIR, EMBEDDINGS_DIR, GRAPHS_DIR]:
+    os.makedirs(_dir, exist_ok=True)
+
 # ── App ─────────────────────────────────────────────────────────────────────
 app = FastAPI(
     title="CodebaseGit API",

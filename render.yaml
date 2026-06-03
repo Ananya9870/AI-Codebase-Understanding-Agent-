@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: codebasegit-backend
+    runtime: python
+    plan: free
+    rootDir: .
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: LLM_PROVIDER
+        value: groq
+      - key: GROQ_API_KEY
+        sync: false          # set manually in Render dashboard
+      - key: ANTHROPIC_API_KEY
+        value: ""
+      - key: OPENAI_API_KEY
+        value: ""
+      - key: REPOS_DIR
+        value: /tmp/repos
+      - key: EMBEDDINGS_DIR
+        value: /tmp/embeddings
+      - key: GRAPHS_DIR
+        value: /tmp/graphs
+      - key: MAX_FILES_TO_SUMMARIZE
+        value: "80"
+      - key: MAX_FILE_SIZE_KB
+        value: "50"
