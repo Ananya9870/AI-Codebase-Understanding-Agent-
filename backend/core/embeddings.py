@@ -1,29 +1,17 @@
 """
 embeddings.py
-Manages vector embeddings using ChromaDB + sentence-transformers.
-Enables semantic search: "where is auth handled?" → relevant files.
+Manages vector embeddings using ChromaDB with its built-in
+default embedding function (no torch/sentence-transformers needed).
+Saves ~350MB RAM — critical for Render free tier (512MB limit).
 """
 
 import os
 import json
+import shutil
 from pathlib import Path
-from typing import Optional
 import chromadb
 from chromadb.config import Settings
-from sentence_transformers import SentenceTransformer
-
-# Lightweight, fast model — good for code/technical text
-EMBEDDING_MODEL = "all-MiniLM-L6-v2"
-
-_model_cache: Optional[SentenceTransformer] = None
-
-
-def get_embedding_model() -> SentenceTransformer:
-    """Load the embedding model (cached after first load)."""
-    global _model_cache
-    if _model_cache is None:
-        _model_cache = SentenceTransformer(EMBEDDING_MODEL)
-    return _model_cache
+from chromadb.utils import embedding_functions
 
 
 def get_chroma_client(embeddings_dir: str, repo_id: str):
@@ -35,9 +23,14 @@ def get_chroma_client(embeddings_dir: str, repo_id: str):
         path=persist_dir,
         settings=Settings(anonymized_telemetry=False),
     )
+
+    # Use ChromaDB's built-in default embedding function (ONNX-based, no torch)
+    ef = embedding_functions.DefaultEmbeddingFunction()
+
     collection = client.get_or_create_collection(
         name="codebase",
         metadata={"hnsw:space": "cosine"},
+        embedding_function=ef,
     )
     return client, collection
 
@@ -50,16 +43,12 @@ def build_embeddings(
 ) -> bool:
     """
     Embed all file summaries and store in ChromaDB.
-    Each document = file path + summary text (rich context for search).
     Returns True if built fresh, False if already existed.
     """
     _, collection = get_chroma_client(embeddings_dir, repo_id)
 
-    # Already populated?
     if collection.count() > 0:
         return False
-
-    model = get_embedding_model()
 
     documents = []
     metadatas = []
@@ -67,7 +56,6 @@ def build_embeddings(
 
     for item in summaries:
         summary = item["summary"]
-        # Build rich text for embedding
         text_parts = [
             f"File: {item['path']}",
             f"Language: {item['language']}",
@@ -77,7 +65,6 @@ def build_embeddings(
             f"Patterns: {', '.join(summary.get('patterns', []))}",
         ]
         doc_text = "\n".join(text_parts)
-
         doc_id = item["path"].replace("/", "__").replace("\\", "__")
 
         documents.append(doc_text)
@@ -93,12 +80,9 @@ def build_embeddings(
     if not documents:
         return False
 
-    # Batch embed
-    embeddings = model.encode(documents, batch_size=32, show_progress_bar=False).tolist()
-
+    # ChromaDB auto-embeds using its built-in function
     collection.add(
         documents=documents,
-        embeddings=embeddings,
         metadatas=metadatas,
         ids=ids,
     )
@@ -113,18 +97,14 @@ def search_codebase(
 ) -> list:
     """
     Semantic search: given a natural language query, return top-k relevant files.
-    Returns list of {path, purpose, domain, score} dicts.
     """
-    model = get_embedding_model()
     _, collection = get_chroma_client(embeddings_dir, repo_id)
 
     if collection.count() == 0:
         return []
 
-    query_embedding = model.encode([query])[0].tolist()
-
     results = collection.query(
-        query_embeddings=[query_embedding],
+        query_texts=[query],
         n_results=min(top_k, collection.count()),
         include=["metadatas", "distances", "documents"],
     )
@@ -145,7 +125,6 @@ def search_codebase(
 
 def delete_embeddings(repo_id: str, embeddings_dir: str):
     """Delete the ChromaDB store for a repo."""
-    import shutil
     persist_dir = Path(embeddings_dir) / repo_id
     if persist_dir.exists():
         shutil.rmtree(persist_dir)
