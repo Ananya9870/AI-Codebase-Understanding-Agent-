@@ -1,6 +1,6 @@
 // api.js — centralized API calls to the FastAPI backend
 
-const BASE = (import.meta.env.VITE_API_URL || '') + '/api'
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export async function analyzeRepo(githubUrl, forceRefresh = false) {
   const res = await fetch(`${BASE}/analyze`, {
