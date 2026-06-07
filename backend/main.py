@@ -69,7 +69,13 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "https://ai-codebase-understanding-agent.vercel.app/"],
+    allow_origins=[
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "https://ai-codebase-understanding-agent.vercel.app",
+    "https://ai-codebase-understanding-agent-git-main-ananya-kriti.vercel.app",
+    "*"
+],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
